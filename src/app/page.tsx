@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 import './chat.css';
 
 export default function LoginPage() {
@@ -10,15 +11,23 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (username.toLowerCase() === 'reginahenpiaoliang' && password === '1802') {
-      sessionStorage.setItem('currentUser', 'regina');
-      router.push('/chat');
-    } else if (username.toLowerCase() === 'aldo' && password === '0904') {
-      sessionStorage.setItem('currentUser', 'aldo');
+
+    const { data: user, error: dbError } = await supabase
+      .from('users')
+      .select('user_key')
+      .eq('username', username.toLowerCase())
+      .eq('password', password)
+      .single();
+
+    if (user) {
+      sessionStorage.setItem('currentUser', user.user_key);
       router.push('/chat');
     } else {
+      if (dbError) {
+        console.error('Login error:', dbError);
+      }
       setError('Invalid username or password!');
     }
   };
